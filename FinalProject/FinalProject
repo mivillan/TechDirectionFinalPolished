@@ -1,0 +1,67 @@
+import maya.cmds as cmds  
+from PySide2.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget  
+
+class LocatorTool(QMainWindow):  
+    def __init__(self): 
+        super(LocatorTool, self).__init__() 
+        self.setWindowTitle("Locator Rotatorv1")  
+        self.setGeometry(100, 100, 250, 100)  
+
+        self.PysideUI()  
+
+    def PysideUI(self):  
+        self.central_widget = QWidget(self)  
+        self.setCentralWidget(self.central_widget)  
+        self.layout = QVBoxLayout(self.central_widget) #QVbox making a vertical layout
+
+        self.create_locator_button = QPushButton("Create the locator!", self)  
+        self.create_locator_button.clicked.connect(self.locator_check)  
+
+        self.layout.addWidget(self.create_locator_button)  
+
+    def locator_check(self):  
+        selection = cmds.ls(selection=True)  
+        if not selection:  
+            cmds.warning("Please select an object.")  #Warning for input error
+            return
+
+        selected_object = selection[0]  #First selected object
+
+        locator = cmds.spaceLocator()[0]  #Create locator
+        print("Locator created:", locator)  #Logs creation in the maya code area
+
+        translation = cmds.xform(selected_object, query=True, translation=True, worldSpace=True)  #Translation grabbed
+        rotation = cmds.xform(selected_object, query=True, rotation=True, worldSpace=True)  #Rotation grabbed
+
+        cmds.xform(locator, translation=translation, rotation=rotation, worldSpace=True)  #Setting locator transform
+
+        cmds.scale(30, 30, 30, locator)  # Scaling up the locator
+        cmds.parent(locator, selected_object)  # Parenting the locator to the selected object
+        self.initial_offset = cmds.xform(locator, query=True, translation=True, worldSpace=True)  # Storing initial offset
+
+    def manual_move(self):  
+        self.manually_moved = True  #Indicates if the locator has been moved by human touch
+
+def create_locator_ui():  
+    global locator_ui  
+    try:
+        locator_ui.close()  #Close ui if already existing
+    except:
+        pass
+
+    locator_ui = LocatorTool()  
+    locator_ui.show()  
+
+def main():  
+    global locator_ui  
+    try:
+        locator_ui.close()  
+    except:
+        pass
+
+    cmds.evalDeferred(create_locator_ui)  
+
+if __name__ == "__main__":  #Checks if the script is running as the main program
+    main()  
+
+
